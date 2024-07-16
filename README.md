@@ -30,10 +30,10 @@ To set up the project on your local machine, follow these steps:
     ```
 
 ## Usage
-
-    ```bash
-    python stock_price_prediction.py
-    ```
+```
+  python stock_price_prediction.py
+```
+    
 ## Model Architecture
 The model architecture combines 1D Convolutional Neural Networks (CNN) and Long Short-Term Memory (BLSTM) layers to capture spatial and temporal dependencies in stock price data.
 
@@ -46,4 +46,13 @@ Final dense layers for output prediction.
 
 ## Results 
 ### Training and Validation Loss
+![Training and Validation Loss](figures/LTH_loss.png)
+minimum validation loss (MSE) : 0.343
+![Training and Validation Loss](figures/ETD_loss.png)
+minimum validation loss (MSE) : 0.296
+![Training and Validation Loss](figures/METC_loss.png)
+minimum validation loss (MSE) : 0.337
 ### Predicted vs Real RSI
+![Predicted vs. Real RSI](figures/LTH_predicted.png)
+![Predicted vs. Real RSI](figures/ETD_predicted.png)
+![Predicted vs. Real RSI](figures/METC_predicted.png)
