@@ -179,7 +179,7 @@ def train(to_train, dict_comp, val_size, epochs):
         model = create_model(X_train,y_train) 
 
         model_checkpoint_callback = ModelCheckpoint(
-            filepath= f'/kaggle/working/{key}.keras',
+            filepath= f'model/{key}.keras',
             monitor='val_loss',
             save_best_only=True,
             mode='min',
@@ -229,8 +229,6 @@ def plot_prediction(instance,model,num_sample,figsize=(12,4)):
 
     # Predict with the model
     y_hat = model.predict(x_val)
-    mse = mean_squared_error(y_val,y_hat)
-    print(f'Mean squared error : {mse}')
 
     # Return the prediction values to the original scale of the RSI
     y_val_orig = instance.y_scaler.inverse_transform(y_val)
@@ -255,7 +253,7 @@ def plot_prediction(instance,model,num_sample,figsize=(12,4)):
     ax1.axhline(y=30, color='green', linestyle='--', label='Oversold (30)')
     
     name = instance.name
-    ax1.set_title(f'{name} Training and validation loss')
+    ax1.set_title(f'{name} Real and Predicted RSI')
     ax1.legend()
     ax1.grid(True)
 
@@ -264,50 +262,50 @@ def plot_prediction(instance,model,num_sample,figsize=(12,4)):
     ax2.grid(True)
     plt.show()
 
-    def main():
-        file_path = '/kaggle/input/company-dataset/lth_etd_metc_Technical_indicator.csv'
-        company_to_train = ['LTH','ETD','METC']
-        company_dict = load_data(file_path,company_to_train)
+def main():
+    file_path = 'data/lth_etd_metc_Technical_indicator.csv'
+    company_to_train = ['LTH','ETD','METC']
+    company_dict = load_data(file_path,company_to_train)
 
-        # Data preprocessing
-        for key in company_to_train:
-            instance = company_dict[key]['obj']
-            instance.sort_date()
-            instance.add_price()
-            instance.add_related_comp()
-            instance.date_price_target = create_target_rsi(instance.df)
-            file_name = f'{key}.csv'
-            instance.df.to_csv(file_name)
-            instance.rmv_date_comp()
-            instance.get_related_feature(ftr_thr=0.5,comp_thr=0.1)
-            
-            # put RSI as the last column
-            data = instance.df.pop('RSI')
-            instance.df['RSI'] = data
-            
-            # normalize the data
-            scaler =  StandardScaler()
-            key_np = scaler.fit_transform(instance.df)
-            
-            # get y scaler
-            rsi = data.to_numpy()
-            rsi = rsi.reshape(-1,1)
-            scaler_y = StandardScaler()
-            instance.y_scaler = scaler_y.fit(rsi)
-            
-            # windowing
-            label = key_np[:,-1]
-            ftr = key_np[:,:-1]
-            x, y = windowing(ftr,label,30,1)
-            num_window = y.shape[0]
-            x_trunc = x[:num_window]
-            print(x_trunc.shape)
-            print(y.shape)
-            instance.train_data = (x_trunc,y)
+    # Data preprocessing
+    for key in company_to_train:
+        instance = company_dict[key]['obj']
+        instance.sort_date()
+        instance.add_price()
+        instance.add_related_company()
+        instance.date_price_target = create_target_rsi(instance.df)
+        file_name = f'{key}.csv'
+        instance.df.to_csv(file_name)
+        instance.rmv_date_company()
+        instance.get_related_feature(ftr_thr=0.5,company_thr=0.1)
+        
+        # put RSI as the last column
+        data = instance.df.pop('RSI')
+        instance.df['RSI'] = data
+        
+        # normalize the data
+        scaler =  StandardScaler()
+        key_np = scaler.fit_transform(instance.df)
+        
+        # get y scaler
+        rsi = data.to_numpy()
+        rsi = rsi.reshape(-1,1)
+        scaler_y = StandardScaler()
+        instance.y_scaler = scaler_y.fit(rsi)
+        
+        # windowing
+        label = key_np[:,-1]
+        ftr = key_np[:,:-1]
+        x, y = windowing(ftr,label,30,1)
+        num_window = y.shape[0]
+        x_trunc = x[:num_window]
+        print(x_trunc.shape)
+        print(y.shape)
+        instance.train_data = (x_trunc,y)
 
-            plot_price_target(instance,50,100,figsize=(10,8), str1='Adj Close', str2='RSI')
+        plot_price_target(instance,50,100,figsize=(10,8), str1='Adj Close', str2='RSI')
+    print('Start training!')
+    train(company_to_train, company_dict, val_size=0.25,epochs=25)
 
-        train(company_to_train, company_dict, val_size=0.25,epochs=25)
-
-    if __name__=="__main__": 
-        main() 
+if __name__=="__main__": 
+    main() 
